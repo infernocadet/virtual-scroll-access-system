@@ -1,6 +1,7 @@
 package system.user;
 
 import java.util.Objects;
+import java.util.Random;
 
 public class User {
 
@@ -19,6 +20,7 @@ public class User {
         this.username = username;
         this.password = password;
         this.role = role;
+        this.userID = generateID(username);
     }
 
     // GETTERS
@@ -37,6 +39,23 @@ public class User {
     public void setEmail(String email){this.email = email;}
     public void setPhoneNo(String phoneNo){this.phoneNo = phoneNo;}
 
+    /**
+     * Creates an 8-char UID based on username and random 4 digit number
+     * @return String UID
+     */
+    private String generateID(String username){
+        Random random = new Random();
+        String nameID;
+        String numID = String.format("%04d", random.nextInt(10000));
+        if (username.length() >= 4){
+            nameID = username.substring(0, 3);
+        } else {
+            nameID = username;
+        }
+        String UID = nameID + numID; // e.g. mcar4177
+        return UID;
+
+    }
 
     @Override
     public boolean equals(Object o) {
