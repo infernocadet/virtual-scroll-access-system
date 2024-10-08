@@ -1,19 +1,21 @@
 package system.user;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.Objects;
 import java.util.Random;
 
 public class User {
 
     private String userID; // users should be able to change this id? can generate one on creation
-    private String username;
+    private final String username;
     private String password;
-    private Role role;
+    private final Role role;
     private String fullName;
     private String email;
     private String phoneNo;
 
-    public User(String username, String password, Role role) {
+    public User(@JsonProperty("username") String username, @JsonProperty("password") String password, @JsonProperty("role") Role role) {
         if (username == null || password == null || role == null) {
             throw new NullPointerException("Username, password, and role cannot be null");
         }
@@ -44,31 +46,13 @@ public class User {
      * @return String UID
      */
     private String generateID(String username){
-        Random random = new Random();
         String nameID;
-        String numID = String.format("%04d", random.nextInt(10000));
         if (username.length() >= 4){
             nameID = username.substring(0, 3);
         } else {
             nameID = username;
         }
-        String UID = nameID + numID; // e.g. mcar4177
-        return UID;
+        return nameID + String.format("%04d", new Random().nextInt(10000));
 
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        User user = (User) o;
-        return Objects.equals(username, user.username) &&
-                Objects.equals(password, user.password) &&
-                role == user.role;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(username, password, role);
     }
 }

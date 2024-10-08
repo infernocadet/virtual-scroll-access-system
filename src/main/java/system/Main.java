@@ -1,10 +1,13 @@
 package system;
 
-import java.util.Random;
+import system.user.UserManager;
 
 public class Main {
+
+    public static UserManager userManager;
+
     public static void main(String[] args) {
-        Random random = new Random();
-        System.out.println(random.nextInt(10000));
+        userManager = new UserManager();
+        userManager.loadUsers();
     }
 }
