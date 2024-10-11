@@ -8,7 +8,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class LoginController {
 
     @GetMapping("/login")
-    public String getLogin(Model model, String error) {
+    public String getLogin(Model model, String error, String logout) {
+        if (logout != null) {
+            model.addAttribute("message", "You have been logged out successfully.");
+        }
         if (error != null) {
             model.addAttribute("error", "Invalid username or password!");
         }

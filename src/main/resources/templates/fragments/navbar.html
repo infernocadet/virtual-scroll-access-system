@@ -1,0 +1,30 @@
+<nav th:fragment="navbar" class="navbar navbar-expand-lg bg-primary text-white mb-3" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+    <div class="container-fluid">
+        <a class="navbar-brand text-white">VSAS</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText"
+                aria-controls="navbarText" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarText">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="link-light nav-link active" href="/">Home</a>
+                </li>
+                <li class="nav-item" sec:authorize="hasRole('ROLE_ADMIN')">
+                    <a class="link-info nav-link" href="/admin">Admin</a>
+                </li>
+            </ul>
+            <span class="navbar-text d-flex align-items-center">
+                <a sec:authorize="isAnonymous()" class="btn btn-light" href="login">Login</a>
+                <div sec:authorize="isAnonymous()">&nbsp;&nbsp;</div>
+                <a sec:authorize="isAnonymous()" class="btn btn-light" href="register">Register</a>
+
+                <div sec:authorize="isAuthenticated()" class="navbar-text text-white">Welcome, <span th:text="${#authentication.name}">User</span></div>
+                <div sec:authorize="isAuthenticated()">&nbsp;&nbsp;</div>
+                <form sec:authorize="isAuthenticated()" class="d-flex" th:action="@{/logout}" method="post" style="display: inline;">
+                    <button type="submit" class="btn btn-danger">Logout</button>
+                </form>
+            </span>
+        </div>
+    </div>
+</nav>

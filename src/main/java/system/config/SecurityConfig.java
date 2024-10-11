@@ -23,6 +23,7 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        // TODO: Dont allow admin endpoints to normal users
         http.authorizeHttpRequests((requests) -> requests.anyRequest().permitAll())
                 .formLogin(form -> form.loginPage("/login").permitAll())
                 .logout(logout -> logout.logoutUrl("/logout").permitAll());
