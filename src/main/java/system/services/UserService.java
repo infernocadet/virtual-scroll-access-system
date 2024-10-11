@@ -15,6 +15,10 @@ public class UserService {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
 
+    public User findByUsername(String username) {
+        return userRepository.findByUsernameIgnoreCase(username).orElse(null);
+    }
+
     public boolean userExists(String username) {
         return userRepository.findByUsernameIgnoreCase(username).isPresent();
     }

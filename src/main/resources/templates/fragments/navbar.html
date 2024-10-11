@@ -1,4 +1,5 @@
-<nav th:fragment="navbar" class="navbar navbar-expand-lg bg-primary text-white mb-3" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<nav th:fragment="navbar" class="navbar navbar-expand-lg bg-primary text-white mb-3"
+     xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
     <div class="container-fluid">
         <a class="navbar-brand text-white">VSAS</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarText"
@@ -15,13 +16,15 @@
                 </li>
             </ul>
             <span class="navbar-text d-flex align-items-center">
-                <a sec:authorize="isAnonymous()" class="btn btn-light" href="login">Login</a>
+                <a sec:authorize="isAnonymous()" class="btn btn-light" href="/login">Login</a>
                 <div sec:authorize="isAnonymous()">&nbsp;&nbsp;</div>
-                <a sec:authorize="isAnonymous()" class="btn btn-light" href="register">Register</a>
+                <a sec:authorize="isAnonymous()" class="btn btn-light" href="/register">Register</a>
 
-                <div sec:authorize="isAuthenticated()" class="navbar-text text-white">Welcome, <span th:text="${#authentication.name}">User</span></div>
+                <div sec:authorize="isAuthenticated()" class="navbar-text text-white">Welcome, <span
+                        th:text="${#authentication.name}">User</span></div>
                 <div sec:authorize="isAuthenticated()">&nbsp;&nbsp;</div>
-                <form sec:authorize="isAuthenticated()" class="d-flex" th:action="@{/logout}" method="post" style="display: inline;">
+                <form sec:authorize="isAuthenticated()" class="d-flex" th:action="@{/logout}" method="post"
+                      style="display: inline;">
                     <button type="submit" class="btn btn-danger">Logout</button>
                 </form>
             </span>

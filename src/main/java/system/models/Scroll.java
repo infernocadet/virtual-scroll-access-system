@@ -3,6 +3,7 @@ package system.models;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 
@@ -21,8 +22,10 @@ public class Scroll {
 
     String name;
 
-    @Column(columnDefinition = "TEXT")
-    String content;
+    private byte[] content;
+
+    @Transient
+    private MultipartFile contentFile;
 
     LocalDateTime createdAt;
 

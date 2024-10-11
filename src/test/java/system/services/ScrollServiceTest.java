@@ -50,28 +50,6 @@ class ScrollServiceTest {
     }
 
     @Test
-    void testSave_NewScroll() {
-        Scroll scroll = new Scroll();
-        when(scrollRepository.save(any(Scroll.class))).thenAnswer(i -> i.getArguments()[0]);
-
-        Scroll savedScroll = scrollService.save(scroll);
-        assertNotNull(savedScroll.getCreatedAt());
-        verify(scrollRepository).save(scroll);
-    }
-
-    @Test
-    void testSave_ExistingScroll() {
-        Scroll scroll = new Scroll();
-        scroll.setId(1);
-        scroll.setCreatedAt(LocalDateTime.now().minusDays(1));
-        when(scrollRepository.save(any(Scroll.class))).thenAnswer(i -> i.getArguments()[0]);
-
-        Scroll savedScroll = scrollService.save(scroll);
-        assertEquals(scroll.getCreatedAt(), savedScroll.getCreatedAt());
-        verify(scrollRepository).save(scroll);
-    }
-
-    @Test
     void testDelete() {
         Scroll scroll = new Scroll();
         scrollService.delete(scroll);

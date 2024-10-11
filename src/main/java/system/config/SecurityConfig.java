@@ -6,6 +6,7 @@ import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
+import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
@@ -24,7 +25,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         // TODO: Dont allow admin endpoints to normal users
-        http.authorizeHttpRequests((requests) -> requests.anyRequest().permitAll())
+        http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests((requests) -> requests.anyRequest().permitAll())
                 .formLogin(form -> form.loginPage("/login").permitAll())
                 .logout(logout -> logout.logoutUrl("/logout").permitAll());
 
