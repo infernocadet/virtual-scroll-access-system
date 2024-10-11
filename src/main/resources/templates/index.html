@@ -29,12 +29,10 @@
                 <li th:each="scroll : ${scrolls}"
                     class="list-group-item d-flex justify-content-between align-items-center">
                     <span th:text="${scroll.name} + ' - ' + ${scroll.user.username}"></span>
-                    <div sec:authorize="isAuthenticated()" class="d-flex">
-                        <a href="/scroll/id" class="btn btn-primary">Download</a>
-                        &nbsp;
-                        <a href="/scroll/id/edit" class="btn btn-warning">Edit</a>
-                        &nbsp;
-                        <form method="POST" action="/scroll/id/delete">
+                    <div sec:authorize="isAuthenticated()" class="d-flex gap-1">
+                        <a th:href="@{'/scroll/' + ${scroll.id} + '/download'}" class="btn btn-primary">Download</a>
+                        <a th:if="${scroll.user.username} == ${#authentication.name}" th:href="@{'/scroll/' + ${scroll.id} + '/edit'}" class="btn btn-warning">Edit</a>
+                        <form th:if="${scroll.user.username} == ${#authentication.name}" method="POST" th:action="@{'/scroll/' + ${scroll.id} + '/delete'}">
                             <button type="submit" class="btn btn-danger">Delete</button>
                         </form>
                     </div>
