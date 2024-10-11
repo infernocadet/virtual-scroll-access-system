@@ -29,6 +29,14 @@ public class User {
 
     LocalDateTime createdAt;
 
+    String firstName;
+    String lastName;
+
+    String email;
+
+    @Column(length = 10)
+    String phone;
+
     @JsonIgnore
     boolean admin;
 
