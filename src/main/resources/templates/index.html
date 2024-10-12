@@ -32,9 +32,7 @@
                     <div sec:authorize="isAuthenticated()" class="d-flex gap-1">
                         <a th:href="@{'/scroll/' + ${scroll.id} + '/download'}" class="btn btn-primary">Download</a>
                         <a th:if="${scroll.user.username} == ${#authentication.name}" th:href="@{'/scroll/' + ${scroll.id} + '/edit'}" class="btn btn-warning">Edit</a>
-                        <form th:if="${scroll.user.username} == ${#authentication.name}" method="POST" th:action="@{'/scroll/' + ${scroll.id} + '/delete'}">
-                            <button type="submit" class="btn btn-danger">Delete</button>
-                        </form>
+                        <a th:if="${scroll.user.username} == ${#authentication.name}" th:href="@{'/scroll/' + ${scroll.id} + '/delete'}" class="btn btn-danger">Delete</a>
                     </div>
                 </li>
             </ul>

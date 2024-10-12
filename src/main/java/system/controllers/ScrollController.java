@@ -6,6 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import system.models.Scroll;
 import system.models.User;
@@ -14,6 +15,7 @@ import system.services.UserService;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Optional;
 
 @Controller
 @RequiredArgsConstructor
@@ -57,4 +59,13 @@ public class ScrollController {
         scrollService.save(scroll, scroll.getContentFile());
         return "redirect:/";
     }
+
+    @GetMapping("/scroll/{id}/delete")
+    @PreAuthorize("isAuthenticated()")
+    public String getDeleteScroll(@PathVariable int id) {
+        Optional<Scroll> optionalScroll = scrollService.findById(id);
+        optionalScroll.ifPresent(scrollService::delete);
+        return "redirect:/";
+    }
+
 }
