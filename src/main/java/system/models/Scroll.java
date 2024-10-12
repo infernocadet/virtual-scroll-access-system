@@ -23,12 +23,14 @@ public class Scroll {
     @Column(unique = true, nullable = false)
     String name;
 
+    @Lob
     private byte[] content;
 
     @Transient
     private MultipartFile contentFile;
 
     String fileName;
+    String contentType;
 
     int downloads;
 

@@ -62,6 +62,7 @@ public class ScrollController {
 
         scroll.setContent(scroll.getContentFile().getBytes());
         scroll.setFileName(scroll.getContentFile().getOriginalFilename());
+        scroll.setContentType(scroll.getContentFile().getContentType());
 
         scrollService.save(scroll);
         return "redirect:/";
@@ -76,12 +77,60 @@ public class ScrollController {
             scroll.setDownloads(scroll.getDownloads() + 1);
             scrollService.save(scroll);
 
-            response.setContentType("application/octet-stream");
+            response.setContentType(scroll.getContentType());
             response.setHeader("Content-Disposition", "attachment; filename=\"" + scroll.getFileName() + "\"");
 
             response.getOutputStream().write(scroll.getContent());
             response.getOutputStream().flush();
         }
+    }
+
+    @GetMapping("/scroll/{id}/edit")
+    public String getEditScroll(@PathVariable int id, Model model, Principal principal) {
+        Optional<Scroll> optionalScroll = scrollService.findById(id);
+        if (optionalScroll.isPresent()) {
+            Scroll scroll = optionalScroll.get();
+            if (scroll.getUser().getId() != userService.findByUsername(principal.getName()).getId()) {
+                return "redirect:/";
+            }
+            model.addAttribute("scroll", scroll);
+            return "scroll_edit";
+        }
+        return "redirect:/";
+    }
+
+    @PostMapping("/scroll/{id}/edit")
+    public String postEditScroll(@PathVariable int id, @ModelAttribute Scroll scroll, Model model, Principal principal) throws IOException {
+        Optional<Scroll> optionalScroll = scrollService.findById(id);
+        if (optionalScroll.isPresent()) {
+            Scroll oldScroll = optionalScroll.get();
+            if (oldScroll.getUser().getId() != userService.findByUsername(principal.getName()).getId()) {
+                return "redirect:/";
+            }
+
+            if (scroll.getName().isEmpty()) {
+                model.addAttribute("error", "Name is empty");
+                model.addAttribute("scroll", oldScroll);
+                return "scroll_edit";
+            } else {
+                if (scrollService.nameExists(scroll.getName()) && !scroll.getName().equals(oldScroll.getName())) {
+                    model.addAttribute("error", "Name already exists");
+                    model.addAttribute("scroll", oldScroll);
+                    return "scroll_edit";
+                }
+            }
+
+            oldScroll.setName(scroll.getName());
+
+            if (!scroll.getContentFile().isEmpty()) {
+                oldScroll.setFileName(scroll.getContentFile().getOriginalFilename());
+                oldScroll.setContent(scroll.getContentFile().getBytes());
+                oldScroll.setContentType(scroll.getContentFile().getContentType());
+            }
+
+            scrollService.save(oldScroll);
+        }
+        return "redirect:/";
     }
 
     @GetMapping("/scroll/{id}/delete")
