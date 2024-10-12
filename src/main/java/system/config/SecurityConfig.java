@@ -12,6 +12,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import system.services.CustomUserDetailsService;
 
+import static org.springframework.security.web.util.matcher.AntPathRequestMatcher.antMatcher;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
@@ -24,8 +26,11 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        // TODO: Dont allow admin endpoints to normal users
-        http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests((requests) -> requests.anyRequest().permitAll())
+        http.csrf(AbstractHttpConfigurer::disable).authorizeHttpRequests((requests) -> requests
+                        .requestMatchers(antMatcher("/scroll/**")).authenticated()
+                        .requestMatchers(antMatcher("/admin/**")).hasRole("ADMIN")
+                        .anyRequest().permitAll()
+                )
                 .formLogin(form -> form.loginPage("/login").permitAll())
                 .logout(logout -> logout.logoutUrl("/logout").permitAll());
 

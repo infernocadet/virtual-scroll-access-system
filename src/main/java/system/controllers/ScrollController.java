@@ -1,7 +1,7 @@
 package system.controllers;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,7 +37,6 @@ public class ScrollController {
     }
 
     @PostMapping("/scroll/create")
-    @PreAuthorize("isAuthenticated()")
     public String postCreateScroll(@ModelAttribute Scroll scroll, Model model, Principal principal) throws IOException {
         User user = userService.findByUsername(principal.getName());
         if (user == null) {
@@ -51,21 +50,46 @@ public class ScrollController {
             return "scroll_create";
         }
 
+        if (scrollService.nameExists(scroll.getName())) {
+            model.addAttribute("error", "Name already exists");
+            return "scroll_create";
+        }
+
         if (scroll.getContentFile().isEmpty()) {
             model.addAttribute("error", "File is empty");
             return "scroll_create";
         }
 
-        scrollService.save(scroll, scroll.getContentFile());
+        scroll.setContent(scroll.getContentFile().getBytes());
+        scroll.setFileName(scroll.getContentFile().getOriginalFilename());
+
+        scrollService.save(scroll);
         return "redirect:/";
+    }
+
+    @GetMapping("/scroll/{id}/download")
+    public void getDownloadScroll(@PathVariable int id, HttpServletResponse response) throws IOException {
+        Optional<Scroll> optionalScroll = scrollService.findById(id);
+        if (optionalScroll.isPresent()) {
+            Scroll scroll = optionalScroll.get();
+            response.setContentType("application/octet-stream");
+            response.setHeader("Content-Disposition", "attachment; filename=\"" + scroll.getFileName() + "\"");
+
+            response.getOutputStream().write(scroll.getContent());
+            response.getOutputStream().flush();
+        }
     }
 
     @GetMapping("/scroll/{id}/delete")
-    @PreAuthorize("isAuthenticated()")
-    public String getDeleteScroll(@PathVariable int id) {
+    public String getDeleteScroll(@PathVariable int id, Principal principal) {
         Optional<Scroll> optionalScroll = scrollService.findById(id);
-        optionalScroll.ifPresent(scrollService::delete);
+        if (optionalScroll.isPresent()) {
+            Scroll scroll = optionalScroll.get();
+            if (scroll.getUser().getId() != userService.findByUsername(principal.getName()).getId()) {
+                return "redirect:/";
+            }
+            scrollService.delete(scroll);
+        }
         return "redirect:/";
     }
-
 }

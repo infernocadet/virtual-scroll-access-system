@@ -2,11 +2,9 @@ package system.services;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import system.models.Scroll;
 import system.repositories.ScrollRepository;
 
-import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +15,10 @@ public class ScrollService {
 
     private final ScrollRepository scrollRepository;
 
+    public boolean nameExists(String name) {
+        return scrollRepository.findByNameIgnoreCase(name).isPresent();
+    }
+
     public Optional<Scroll> findById(int id) {
         return scrollRepository.findById(id);
     }
@@ -25,11 +27,10 @@ public class ScrollService {
         return scrollRepository.findAll();
     }
 
-    public Scroll save(Scroll scroll, MultipartFile contentFile) throws IOException {
+    public Scroll save(Scroll scroll) {
         if (scroll.getId() == 0) {
             scroll.setCreatedAt(LocalDateTime.now());
         }
-        scroll.setContent(contentFile.getBytes());
         return scrollRepository.save(scroll);
     }
 

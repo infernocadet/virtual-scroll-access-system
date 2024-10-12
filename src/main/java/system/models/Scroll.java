@@ -20,12 +20,15 @@ public class Scroll {
     @GeneratedValue(strategy = GenerationType.SEQUENCE)
     int id;
 
+    @Column(unique = true, nullable = false)
     String name;
 
     private byte[] content;
 
     @Transient
     private MultipartFile contentFile;
+
+    String fileName;
 
     LocalDateTime createdAt;
 
