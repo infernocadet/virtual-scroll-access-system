@@ -72,6 +72,10 @@ public class ScrollController {
         Optional<Scroll> optionalScroll = scrollService.findById(id);
         if (optionalScroll.isPresent()) {
             Scroll scroll = optionalScroll.get();
+
+            scroll.setDownloads(scroll.getDownloads() + 1);
+            scrollService.save(scroll);
+
             response.setContentType("application/octet-stream");
             response.setHeader("Content-Disposition", "attachment; filename=\"" + scroll.getFileName() + "\"");
 

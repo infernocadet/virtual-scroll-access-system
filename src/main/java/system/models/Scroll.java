@@ -30,6 +30,8 @@ public class Scroll {
 
     String fileName;
 
+    int downloads;
+
     LocalDateTime createdAt;
 
     @NotNull
