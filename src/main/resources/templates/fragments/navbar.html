@@ -25,12 +25,17 @@
                 </li>
             </ul>
             <span class="navbar-text d-flex align-items-center">
+                <span sec:authorize="isAnonymous()" class="navbar-text text-white" style="margin-left: 150px;">Guest</span>
                 <a sec:authorize="isAnonymous()" class="btn btn-light" href="/login">Login</a>
                 <div sec:authorize="isAnonymous()">&nbsp;&nbsp;</div>
                 <a sec:authorize="isAnonymous()" class="btn btn-light" href="/register">Register</a>
 
-                <div sec:authorize="isAuthenticated()" class="navbar-text text-white">Welcome, <span
-                        th:text="${#authentication.name}">User</span></div>
+                <div sec:authorize="isAuthenticated()" class="navbar-text text-white">Welcome
+                    <!-- Check if the user is an admin -->
+                    <span sec:authorize="hasRole('ROLE_ADMIN')">Admin,</span>
+                    <!-- Check if the user is authenticated and doesn't have admin -->
+                    <span sec:authorize="!hasRole('ROLE_ADMIN')">User,</span>
+                    <span th:text="${#authentication.name}">User</span></div>
                 <div sec:authorize="isAuthenticated()">&nbsp;&nbsp;</div>
                 <form sec:authorize="isAuthenticated()" class="d-flex" th:action="@{/logout}" method="post"
                       style="display: inline;">
