@@ -43,4 +43,8 @@ public class User {
     @JsonIgnore
     @OneToMany(mappedBy = "user")
     List<Scroll> scrolls;
+
+    // this column stores emoji unicodes
+    @Column(nullable = false, length = 10) // varchar 10
+            String profileEmoji = "😀"; // Default emoji is set as a smiley face
 }

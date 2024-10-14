@@ -33,6 +33,7 @@ public class ProfileController {
                                 @RequestParam String lastName,
                                 @RequestParam String phone,
                                 @RequestParam(required = false) String password,
+                                @RequestParam String profileEmoji,
                                 Model model){
         User currentUser = userService.getCurrentlyLoggedInUser();
 
@@ -41,6 +42,7 @@ public class ProfileController {
         currentUser.setFirstName(firstName);
         currentUser.setLastName(lastName);
         currentUser.setPhone(phone);
+        currentUser.setProfileEmoji(profileEmoji);
 
         // if new password is provided, encrypt and update
         if (password != null && !password.isEmpty()) {

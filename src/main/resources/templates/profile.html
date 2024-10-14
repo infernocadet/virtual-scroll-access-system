@@ -9,6 +9,11 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
     <style>
         .edit-form {display: none;}
+        .profile-emoji {
+            font-size: 4rem;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -24,6 +29,7 @@
         </button>
         <div class="card-body">
             <div id="profileViewMode">
+                <div class="profile-emoji" th:text="${user.profileEmoji}"></div>
                 <h5 class="card-title">Username: <span th:text="${user.username}"></span></h5>
                 <p class="card-text">
                     Email: <span th:if="${user.email != ''}" th:text="${user.email}"></span>
@@ -43,6 +49,21 @@
                 </p>
             </div>
             <form id="profileEditMode" class="edit-form" th:action="@{/profile/update}" method="post">
+                <div class="mb-3">
+                    <label for="profileEmoji" class="form-label">Profile Emoji</label>
+                    <select id="profileEmoji" name="profileEmoji" class="form-select">
+                        <option th:value="'😀'" th:selected="${user.profileEmoji == '😀'}">😀</option>
+                        <option th:value="'🤓'" th:selected="${user.profileEmoji == '🤓'}">🤓</option>
+                        <option th:value="'😎'" th:selected="${user.profileEmoji == '😎'}">😎</option>
+                        <option th:value="'😵'" th:selected="${user.profileEmoji == '😵'}">😵</option>
+                        <option th:value="'😾'" th:selected="${user.profileEmoji == '😾'}">😾</option>
+                        <option th:value="'👽'" th:selected="${user.profileEmoji == '👽'}">👽</option>
+                        <option th:value="'🤖'" th:selected="${user.profileEmoji == '🤖'}">🤖</option>
+                        <option th:value="'🧛‍♂️'" th:selected="${user.profileEmoji == '🧛‍'}">🧛‍</option>
+                        <option th:value="'🥷'" th:selected="${user.profileEmoji == '🥷'}">🥷</option>
+                    </select>
+                </div>
+
                 <div class="mb-3">
                     <label for="email" class="form-label">Email</label>
                     <input type="email" id="email" name="email" class="form-control" th:value="${user.email}" placeholder="Email">
