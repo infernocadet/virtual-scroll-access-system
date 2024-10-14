@@ -12,6 +12,35 @@
 
 <div class="container mt-5">
     <h2>All Registered Users</h2>
+
+    <!-- Add User Form -->
+    <form th:action="@{/admin/users/add}" th:object="${newUser}" method="post" class="mt-4">
+        <div class="row g-3">
+            <div class="col-md-2">
+                <input type="text" th:field="*{username}" class="form-control" placeholder="Username" required>
+            </div>
+            <div class="col-md-2">
+                <input type="text" th:field="*{firstName}" class="form-control" placeholder="First Name" required>
+            </div>
+            <div class="col-md-2">
+                <input type="text" th:field="*{lastName}" class="form-control" placeholder="Last Name" required>
+            </div>
+            <div class="col-md-3">
+                <input type="email" th:field="*{email}" class="form-control" placeholder="Email" required>
+            </div>
+            <div class="col-md-2">
+                <input type="text" th:field="*{phone}" class="form-control" placeholder="Phone">
+            </div>
+            <div class="col-md-2">
+                <input type="password" th:field="*{password}" class="form-control" placeholder="Password" required>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary">Add User</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- User List -->
     <table class="table table-striped mt-3">
         <thead>
         <tr>
@@ -22,6 +51,7 @@
             <th>Email</th>
             <th>Phone</th>
             <th>Admin</th>
+            <th>Action</th>
         </tr>
         </thead>
         <tbody>
@@ -34,6 +64,11 @@
             <td th:text="${user.email}">email@example.com</td>
             <td th:text="${user.phone}">1234567890</td>
             <td th:text="${user.admin ? 'Yes' : 'No'}">No</td>
+            <td>
+                <form th:action="@{/admin/users/delete/{id}(id=${user.id})}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </td>
         </tr>
         </tbody>
     </table>
