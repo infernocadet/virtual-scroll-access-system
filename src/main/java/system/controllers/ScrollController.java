@@ -1,13 +1,12 @@
 package system.controllers;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.*;
 import system.models.Scroll;
 import system.models.User;
 import system.services.ScrollService;
@@ -69,7 +68,8 @@ public class ScrollController {
     }
 
     @GetMapping("/scroll/{id}/download")
-    public void getDownloadScroll(@PathVariable int id, HttpServletResponse response) throws IOException {
+    @ResponseBody
+    public ResponseEntity<byte[]> getDownloadScroll(@PathVariable int id) {
         Optional<Scroll> optionalScroll = scrollService.findById(id);
         if (optionalScroll.isPresent()) {
             Scroll scroll = optionalScroll.get();
@@ -77,12 +77,12 @@ public class ScrollController {
             scroll.setDownloads(scroll.getDownloads() + 1);
             scrollService.save(scroll);
 
-            response.setContentType(scroll.getContentType());
-            response.setHeader("Content-Disposition", "attachment; filename=\"" + scroll.getFileName() + "\"");
-
-            response.getOutputStream().write(scroll.getContent());
-            response.getOutputStream().flush();
+            return ResponseEntity.ok()
+                    .contentType(MediaType.valueOf(scroll.getContentType()))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + scroll.getFileName() + "\"")
+                    .body(scroll.getContent());
         }
+        return ResponseEntity.notFound().build();
     }
 
     @GetMapping("/scroll/{id}/edit")
