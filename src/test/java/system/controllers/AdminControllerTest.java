@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import system.services.ScrollService;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
@@ -117,13 +118,13 @@ class AdminControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void testViewAllUsersWithNoUsers() throws Exception {
-        when(userRepository.findAll()).thenReturn(Arrays.asList());
+        when(userRepository.findAll()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/admin/users"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/view_users"))
                 .andExpect(model().attributeExists("users"))
-                .andExpect(model().attribute("users", Arrays.asList()));
+                .andExpect(model().attribute("users", Collections.emptyList()));
     }
 
     @Test
@@ -157,13 +158,13 @@ class AdminControllerTest {
     @Test
     @WithMockUser(roles = "ADMIN")
     void testViewAllScrollsWithNoScrolls() throws Exception {
-        when(scrollService.findAll()).thenReturn(Arrays.asList());
+        when(scrollService.findAll()).thenReturn(Collections.emptyList());
 
         mockMvc.perform(get("/admin/statistics"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("admin/view_scrolls"))
                 .andExpect(model().attributeExists("scrolls"))
-                .andExpect(model().attribute("scrolls", Arrays.asList()));
+                .andExpect(model().attribute("scrolls", Collections.emptyList()));
     }
 
     @Test
@@ -200,5 +201,35 @@ class AdminControllerTest {
                 .andExpect(redirectedUrl("/admin/users"));
 
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithSuccessfulSave() throws Exception {
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenReturn(new User());
+
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "newUser")
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(passwordEncoder).encode("password");
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testDeleteUserSuccess() throws Exception {
+        doNothing().when(userRepository).deleteById(1);
+
+        mockMvc.perform(post("/admin/users/delete/1")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository).deleteById(1);
     }
 }
