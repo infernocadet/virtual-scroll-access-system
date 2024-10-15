@@ -11,6 +11,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import system.models.User;
 import system.repositories.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import system.services.ScrollService;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,6 +33,9 @@ class AdminControllerTest {
 
     @MockBean
     private BCryptPasswordEncoder passwordEncoder;
+
+    @MockBean
+    private ScrollService scrollService;
 
     @BeforeEach
     void setUp() {
@@ -82,5 +86,31 @@ class AdminControllerTest {
     void testUnauthorizedAccess() throws Exception {
         mockMvc.perform(get("/admin/users"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithInvalidData() throws Exception {
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "")
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testDeleteNonExistentUser() throws Exception {
+        doThrow(new RuntimeException("User not found")).when(userRepository).deleteById(999);
+
+        mockMvc.perform(post("/admin/users/delete/999")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository).deleteById(999);
     }
 }
