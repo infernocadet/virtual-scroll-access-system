@@ -106,6 +106,78 @@ class ScrollControllerTest {
                 .andExpect(model().attributeExists("error"));
     }
 
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testPostCreateScrollEmptyName() throws Exception {
+        when(userService.findByUsername("testuser")).thenReturn(testUser);
+
+        MockMultipartFile file = new MockMultipartFile("contentFile", "test.txt", MediaType.TEXT_PLAIN_VALUE, "test content".getBytes());
+
+        mockMvc.perform(multipart("/scroll/create")
+                        .file(file)
+                        .param("name", "")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("scroll_create"))
+                .andExpect(model().attributeExists("error"));
+
+        verify(scrollService, never()).save(any(Scroll.class));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testPostCreateScrollEmptyFile() throws Exception {
+        when(userService.findByUsername("testuser")).thenReturn(testUser);
+
+        MockMultipartFile file = new MockMultipartFile("contentFile", "", MediaType.TEXT_PLAIN_VALUE, new byte[0]);
+
+        mockMvc.perform(multipart("/scroll/create")
+                        .file(file)
+                        .param("name", "New Scroll")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("scroll_create"))
+                .andExpect(model().attributeExists("error"));
+
+        verify(scrollService, never()).save(any(Scroll.class));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testPostEditScrollNameExists() throws Exception {
+        when(scrollService.findById(1)).thenReturn(Optional.of(testScroll));
+        when(userService.findByUsername("testuser")).thenReturn(testUser);
+        when(scrollService.nameExists("Existing Scroll")).thenReturn(true);
+
+        MockMultipartFile file = new MockMultipartFile("contentFile", "", MediaType.TEXT_PLAIN_VALUE, new byte[0]);
+
+        mockMvc.perform(multipart("/scroll/1/edit")
+                        .file(file)
+                        .param("name", "Existing Scroll")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("scroll_edit"))
+                .andExpect(model().attributeExists("error"));
+
+        verify(scrollService, never()).save(any(Scroll.class));
+    }
+
+    @Test
+    @WithMockUser(username = "otheruser")
+    void testGetEditScrollUnauthorized() throws Exception {
+        User otherUser = new User();
+        otherUser.setId(2);
+        otherUser.setUsername("otheruser");
+
+        when(scrollService.findById(1)).thenReturn(Optional.of(testScroll));
+        when(userService.findByUsername("otheruser")).thenReturn(otherUser);
+
+        mockMvc.perform(get("/scroll/1/edit"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
+    }
+
     @Test
     @WithMockUser(username = "testuser")
     void testGetDownloadScroll() throws Exception {
