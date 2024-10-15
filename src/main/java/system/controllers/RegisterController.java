@@ -26,12 +26,12 @@ public class RegisterController {
 
     @PostMapping("/register")
     public String postRegister(@ModelAttribute User user, Model model) {
-        if (user.getUsername().isEmpty() || user.getPassword().isEmpty()) {
+        if (user.getUsername() == null || user.getUsername().isEmpty() || user.getPassword() == null || user.getPassword().isEmpty()) {
             model.addAttribute("error", "Username or Password is empty");
             return "register";
         }
 
-        if (!user.getEmail().isEmpty()) {
+        if (user.getEmail() != null && !user.getEmail().isEmpty()) {
             Pattern emailPattern = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
             if (!emailPattern.matcher(user.getEmail()).matches()) {
                 model.addAttribute("error", "Invalid email");
@@ -39,7 +39,7 @@ public class RegisterController {
             }
         }
 
-        if (user.getPhone().length() != 10 && !user.getPhone().isEmpty()) {
+        if (user.getPhone() != null && !user.getPhone().isEmpty() && user.getPhone().length() != 10) {
             model.addAttribute("error", "Phone number must be 10 digits");
             return "register";
         }
