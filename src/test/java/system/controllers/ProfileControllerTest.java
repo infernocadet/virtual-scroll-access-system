@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 import system.models.User;
 import system.services.UserService;
@@ -94,6 +95,26 @@ class ProfileControllerTest {
 
         verify(userService).save(any(User.class));
         verify(passwordEncoder).encode("newpassword");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testUpdateProfileWithoutPassword() throws Exception {
+        when(userService.getCurrentlyLoggedInUser()).thenReturn(testUser);
+
+        mockMvc.perform(post("/profile/update")
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("email", "newemail@example.com")
+                        .param("firstName", "NewFirst")
+                        .param("lastName", "NewLast")
+                        .param("phone", "9876543210")
+                        .param("profileEmoji", "🎉"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("profile"))
+                .andExpect(model().attributeExists("user"));
+
+        verify(userService).save(any(User.class));
+        verify(passwordEncoder, never()).encode(anyString());
     }
 
     @Test
