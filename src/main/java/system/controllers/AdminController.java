@@ -42,17 +42,19 @@ public class AdminController {
     }
 
 
-    // Add a new user
     @PostMapping("/admin/users/add")
     public String addUser(@ModelAttribute("newUser") User user) {
-        if (user.getUsername() == null || user.getUsername().isEmpty()) {
+        if (user.getUsername() == null || user.getUsername().isEmpty() || user.getPassword() == null || user.getPassword().isEmpty()) {
             return "redirect:/admin/users";
         }
 
-        String encodedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(encodedPassword);
-        user.setCreatedAt(LocalDateTime.now());
-        userRepository.save(user);
+        try {
+            String encodedPassword = passwordEncoder.encode(user.getPassword());
+            user.setPassword(encodedPassword);
+            user.setCreatedAt(LocalDateTime.now());
+            userRepository.save(user);
+        } catch (Exception e) {
+        }
         return "redirect:/admin/users";
     }
 
