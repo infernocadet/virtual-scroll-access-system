@@ -34,6 +34,7 @@ class ScrollServiceTest {
         testScroll.setId(1);
         testScroll.setName("Test Scroll");
         testScroll.setCreatedAt(LocalDateTime.now());
+        testScroll.setUpdatedAt(LocalDateTime.now());
     }
 
     @Test
@@ -107,5 +108,48 @@ class ScrollServiceTest {
     void testDelete() {
         scrollService.delete(testScroll);
         verify(scrollRepository).delete(testScroll);
+    }
+
+    @Test
+    void testFormatScrollDates() {
+        when(scrollRepository.findById(1)).thenReturn(Optional.of(testScroll));
+
+        Optional<Scroll> result = scrollService.findById(1);
+
+        assertTrue(result.isPresent());
+        Scroll scroll = result.get();
+        assertNotNull(scroll.getFormattedCreatedAt());
+        assertNotNull(scroll.getFormattedUpdatedAt());
+    }
+
+    @Test
+    void testSaveExistingScrollUpdateTime() {
+        LocalDateTime originalUpdatedAt = testScroll.getUpdatedAt();
+        when(scrollRepository.save(any(Scroll.class))).thenReturn(testScroll);
+
+        Scroll result = scrollService.save(testScroll);
+
+        assertNotNull(result);
+        assertTrue(result.getUpdatedAt().isAfter(originalUpdatedAt));
+    }
+
+    @Test
+    void testFindAllWithEmptyList() {
+        when(scrollRepository.findAll()).thenReturn(Arrays.asList());
+
+        List<Scroll> result = scrollService.findAll();
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testDeleteNonExistentScroll() {
+        Scroll nonExistentScroll = new Scroll();
+        nonExistentScroll.setId(999);
+
+        scrollService.delete(nonExistentScroll);
+
+        verify(scrollRepository).delete(nonExistentScroll);
     }
 }
