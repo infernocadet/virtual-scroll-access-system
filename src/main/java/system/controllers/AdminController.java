@@ -25,7 +25,6 @@ public class AdminController {
         this.scrollService = scrollService;
     }
 
-    // View all users
     @GetMapping("/admin/users")
     public String viewAllUsers(Model model) {
         List<User> users = userRepository.findAll();
@@ -44,7 +43,9 @@ public class AdminController {
 
     @PostMapping("/admin/users/add")
     public String addUser(@ModelAttribute("newUser") User user) {
-        if (user.getUsername() == null || user.getUsername().isEmpty() || user.getPassword() == null || user.getPassword().isEmpty()) {
+        if (user.getUsername() == null || user.getUsername().isEmpty() ||
+                user.getPassword() == null || user.getPassword().isEmpty() ||
+                user.getUsername().length() > 255 || !user.getUsername().matches("^[a-zA-Z0-9]+$")) {
             return "redirect:/admin/users";
         }
 

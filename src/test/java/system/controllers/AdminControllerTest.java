@@ -17,6 +17,7 @@ import system.services.ScrollService;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -101,6 +102,34 @@ class AdminControllerTest {
 
         verify(userRepository, never()).save(any(User.class));
     }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithLongUsername() throws Exception {
+        String longUsername = "a".repeat(256);
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", longUsername)
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithSpecialCharactersInUsername() throws Exception {
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "user@name")
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
 
     @Test
     @WithMockUser(roles = "ADMIN")
