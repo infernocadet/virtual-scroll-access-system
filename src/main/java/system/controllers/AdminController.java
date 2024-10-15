@@ -45,6 +45,10 @@ public class AdminController {
     // Add a new user
     @PostMapping("/admin/users/add")
     public String addUser(@ModelAttribute("newUser") User user) {
+        if (user.getUsername() == null || user.getUsername().isEmpty()) {
+            return "redirect:/admin/users";
+        }
+
         String encodedPassword = passwordEncoder.encode(user.getPassword());
         user.setPassword(encodedPassword);
         user.setCreatedAt(LocalDateTime.now());
@@ -52,10 +56,12 @@ public class AdminController {
         return "redirect:/admin/users";
     }
 
-    // Delete an existing user by ID
     @PostMapping("/admin/users/delete/{id}")
     public String deleteUser(@PathVariable int id) {
-        userRepository.deleteById(id);
+        try {
+            userRepository.deleteById(id);
+        } catch (Exception e) {
+        }
         return "redirect:/admin/users";
     }
 }
