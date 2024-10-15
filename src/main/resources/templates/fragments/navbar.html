@@ -25,7 +25,6 @@
                 </li>
             </ul>
             <span class="navbar-text d-flex align-items-center">
-                <span sec:authorize="isAnonymous()" class="navbar-text text-white" style="margin-left: 150px;">Guest</span>
                 <a sec:authorize="isAnonymous()" class="btn btn-light" href="/login">Login</a>
                 <div sec:authorize="isAnonymous()">&nbsp;&nbsp;</div>
                 <a sec:authorize="isAnonymous()" class="btn btn-light" href="/register">Register</a>
