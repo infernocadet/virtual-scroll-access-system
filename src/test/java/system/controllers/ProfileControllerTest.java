@@ -39,6 +39,8 @@ class ProfileControllerTest {
         testUser.setEmail("test@example.com");
         testUser.setFirstName("Test");
         testUser.setLastName("User");
+        testUser.setPhone("1234567890");
+        testUser.setProfileEmoji("😊");
     }
 
     @Test
@@ -63,7 +65,8 @@ class ProfileControllerTest {
                         .param("email", "newemail@example.com")
                         .param("firstName", "NewFirst")
                         .param("lastName", "NewLast")
-                        .param("phone", "1234567890"))
+                        .param("phone", "1234567890")
+                        .param("profileEmoji", "🎉"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("profile"))
                 .andExpect(model().attributeExists("user"));
@@ -83,12 +86,32 @@ class ProfileControllerTest {
                         .param("firstName", "NewFirst")
                         .param("lastName", "NewLast")
                         .param("phone", "1234567890")
-                        .param("password", "newpassword"))
+                        .param("password", "newpassword")
+                        .param("profileEmoji", "🚀"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("profile"))
                 .andExpect(model().attributeExists("user"));
 
         verify(userService).save(any(User.class));
         verify(passwordEncoder).encode("newpassword");
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testUpdateProfileEmoji() throws Exception {
+        when(userService.getCurrentlyLoggedInUser()).thenReturn(testUser);
+
+        mockMvc.perform(post("/profile/update")
+                        .with(csrf())
+                        .param("email", testUser.getEmail())
+                        .param("firstName", testUser.getFirstName())
+                        .param("lastName", testUser.getLastName())
+                        .param("phone", testUser.getPhone() != null ? testUser.getPhone() : "")
+                        .param("profileEmoji", "🌈"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("profile"))
+                .andExpect(model().attributeExists("user"));
+
+        verify(userService).save(any(User.class));
     }
 }
