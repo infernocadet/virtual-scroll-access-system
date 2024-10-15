@@ -109,7 +109,7 @@ class RegisterControllerTest {
                         .param("username", "newUser")
                         .param("password", "password")
                         .param("email", "valid@example.com")
-                        .param("phone", "123456")
+                        .param("phone", "123")  // Invalid phone number
                         .with(SecurityMockMvcRequestPostProcessors.csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("register"))
