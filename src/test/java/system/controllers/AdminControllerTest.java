@@ -9,6 +9,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import system.models.User;
+import system.models.Scroll;
 import system.repositories.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import system.services.ScrollService;
@@ -39,7 +40,6 @@ class AdminControllerTest {
 
     @BeforeEach
     void setUp() {
-        // Setup any necessary data or mocks
     }
 
     @Test
@@ -112,5 +112,93 @@ class AdminControllerTest {
                 .andExpect(redirectedUrl("/admin/users"));
 
         verify(userRepository).deleteById(999);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testViewAllUsersWithNoUsers() throws Exception {
+        when(userRepository.findAll()).thenReturn(Arrays.asList());
+
+        mockMvc.perform(get("/admin/users"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/view_users"))
+                .andExpect(model().attributeExists("users"))
+                .andExpect(model().attribute("users", Arrays.asList()));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithExistingUsername() throws Exception {
+        when(userRepository.save(any(User.class))).thenThrow(new RuntimeException("Username already exists"));
+
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "existingUser")
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testViewAllScrolls() throws Exception {
+        List<Scroll> scrolls = Arrays.asList(new Scroll(), new Scroll());
+        when(scrollService.findAll()).thenReturn(scrolls);
+
+        mockMvc.perform(get("/admin/statistics"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/view_scrolls"))
+                .andExpect(model().attributeExists("scrolls"))
+                .andExpect(model().attribute("scrolls", scrolls));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testViewAllScrollsWithNoScrolls() throws Exception {
+        when(scrollService.findAll()).thenReturn(Arrays.asList());
+
+        mockMvc.perform(get("/admin/statistics"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/view_scrolls"))
+                .andExpect(model().attributeExists("scrolls"))
+                .andExpect(model().attribute("scrolls", Arrays.asList()));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void testUnauthorizedAccessToAdminPages() throws Exception {
+        mockMvc.perform(get("/admin/users"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/admin/statistics"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithEmptyUsername() throws Exception {
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "")
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithEmptyPassword() throws Exception {
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "newUser")
+                        .param("password", ""))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
     }
 }
