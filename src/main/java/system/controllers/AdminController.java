@@ -118,6 +118,30 @@ public class AdminController {
         model.addAttribute("userScrollCounts", userScrollCounts);
         return "admin/view_users";
     }
+    @PostMapping("/admin/users/makeAdmin/{id}")
+    public String makeAdmin(@PathVariable int id) {
+        try {
+            User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + id));
+            user.setAdmin(true);
+            userRepository.save(user);
+        } catch (Exception e) {
+
+        }
+        return "redirect:/admin/users";
+    }
+
+    @PostMapping("/admin/users/demoteAdmin/{id}")
+    public String removeAdmin(@PathVariable int id) {
+        try {
+            User user = userRepository.findById(id).orElseThrow(() -> new IllegalArgumentException("Invalid user ID: " + id));
+            user.setAdmin(false);
+            userRepository.save(user);
+        } catch (Exception e) {
+
+        }
+        return "redirect:/admin/users";
+    }
+
 
 
 

@@ -83,6 +83,23 @@
                     </button>
                 </form>
             </td>
+            <td>
+                <form th:action="@{/admin/users/makeAdmin/{id}(id=${user.id})}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-success"
+                            th:disabled="${user.admin}"
+                            onclick="return confirm('Are you sure you want to make this user an admin?');">
+                        Make Admin
+                    </button>
+                </form>
+                <form th:action="@{/admin/users/demoteAdmin/{id}(id=${user.id})}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger"
+                            th:disabled="${!user.admin}"
+                            onclick="return confirm('Are you sure you want to demote this admin?');">
+                        Remove Admin
+                    </button>
+                </form>
+            </td>
+
         </tr>
         </tbody>
     </table>
