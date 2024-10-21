@@ -51,6 +51,7 @@
             <th>Email</th>
             <th>Phone</th>
             <th>Admin</th>
+            <th>Scrolls</th>
             <th>Action</th>
         </tr>
         </thead>
@@ -64,6 +65,7 @@
             <td th:text="${user.email}">email@example.com</td>
             <td th:text="${user.phone}">1234567890</td>
             <td th:text="${user.admin ? 'Yes' : 'No'}">No</td>
+            <td th:text="${userScrollCounts.get(user)}">0</td>
             <td>
                 <form th:action="@{/admin/users/delete/{id}(id=${user.id})}" method="post" style="display:inline;">
                     <button type="submit" class="btn btn-danger">Delete</button>

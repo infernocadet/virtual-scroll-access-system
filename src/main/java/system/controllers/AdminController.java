@@ -10,7 +10,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import system.services.ScrollService;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Controller
 public class AdminController {
@@ -28,8 +30,14 @@ public class AdminController {
     @GetMapping("/admin/users")
     public String viewAllUsers(Model model) {
         List<User> users = userRepository.findAll();
+        Map<User, Integer> userScrollCounts = new HashMap<>();
+        for (User user : users) {
+            int scrollCount = (user.getScrolls() != null) ? user.getScrolls().size() : 0;
+            userScrollCounts.put(user, scrollCount);
+        }
         model.addAttribute("users", users);
         model.addAttribute("newUser", new User()); // Add an empty User object for the add form
+        model.addAttribute("userScrollCounts", userScrollCounts);
         return "admin/view_users";
     }
 
