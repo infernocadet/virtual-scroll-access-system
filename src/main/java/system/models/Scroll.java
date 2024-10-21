@@ -48,6 +48,8 @@ public class Scroll {
     @Transient
     private String formattedUpdatedAt;
 
+    private String password;
+
     @NotNull
     @ManyToOne
     @JoinColumn(name = "user_id", referencedColumnName = "id", nullable = false)

@@ -1,12 +1,11 @@
 package system.controllers;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.ModelAndView;
 import system.models.Scroll;
 import system.models.User;
 import system.services.ScrollService;
@@ -72,12 +71,20 @@ public class ScrollController {
         return "redirect:/";
     }
 
-    @GetMapping("/scroll/{id}/download")
+    @PostMapping("/scroll/{id}/download")
     @ResponseBody
-    public ResponseEntity<byte[]> getDownloadScroll(@PathVariable int id) {
+    public Object getDownloadScroll(@PathVariable int id, @RequestParam(required = false) String password, Model model) {
         Optional<Scroll> optionalScroll = scrollService.findById(id);
         if (optionalScroll.isPresent()) {
             Scroll scroll = optionalScroll.get();
+
+            if (scroll.getPassword() != null && !scroll.getPassword().isEmpty()) {
+                if (!scroll.getPassword().equals(password)) {
+                    model.addAttribute("error", "Wrong password");
+                    model.addAttribute("scrolls", scrollService.findAll());
+                    return new ModelAndView("index", model.asMap());
+                }
+            }
 
             scroll.setDownloads(scroll.getDownloads() + 1);
             scrollService.save(scroll);
@@ -126,6 +133,10 @@ public class ScrollController {
             }
 
             oldScroll.setName(scroll.getName());
+
+            if (!scroll.getPassword().equals(oldScroll.getPassword())) {
+                oldScroll.setPassword(scroll.getPassword());
+            }
 
             if (!scroll.getContentFile().isEmpty()) {
                 oldScroll.setFileName(scroll.getContentFile().getOriginalFilename());

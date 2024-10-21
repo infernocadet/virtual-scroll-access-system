@@ -48,8 +48,7 @@
         </div>
         <div class="card-body">
             <ul class="list-group">
-                <li th:each="scroll : ${scrolls}"
-                    class="list-group-item d-flex justify-content-between align-items-center">
+                <li th:each="scroll : ${scrolls}" class="list-group-item d-flex justify-content-between align-items-center">
                     <span th:text="${scroll.name} + ' - ' + ${scroll.user.username}"></span>
                     <span>
                         <span th:if="${scroll.formattedUpdatedAt != null}" th:text="${scroll.formattedUpdatedAt}"></span>
@@ -57,7 +56,17 @@
                     </span>
                     <span th:text="${scroll.downloads} + ' Downloads'"></span>
                     <div sec:authorize="isAuthenticated()" class="d-flex gap-1">
-                        <a th:href="@{'/scroll/' + ${scroll.id} + '/download'}" class="btn btn-primary">Download</a>
+                        <form th:if="${scroll.password == null} or ${#strings.length(scroll.password) == 0}"
+                              th:action="@{'/scroll/' + ${scroll.id} + '/download'}"
+                              method="post"
+                              th:id="'downloadForm-' + ${scroll.id}">
+                            <button type="submit" class="btn btn-primary">Download</button>
+                        </form>
+
+                        <button th:if="${scroll.password != null} and ${#strings.length(scroll.password) > 0}"
+                                class="btn btn-primary" data-bs-toggle="modal"
+                                th:attr="data-bs-target='#passwordModal-' + ${scroll.id}">Download</button>
+
                         <a th:if="${scroll.user.username} == ${#authentication.name}"
                            th:href="@{'/scroll/' + ${scroll.id} + '/edit'}" class="btn btn-warning">Edit</a>
                         <a th:if="${scroll.user.username} == ${#authentication.name}"
@@ -67,7 +76,45 @@
             </ul>
         </div>
     </div>
+
+    <div th:each="scroll : ${scrolls}" th:if="${scroll.password != null} and ${#strings.length(scroll.password) > 0}"
+         th:id="'passwordModal-' + ${scroll.id}"
+         class="modal fade" tabindex="-1" aria-labelledby="passwordModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="passwordModalLabel">Enter Password to Download Scroll</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form th:action="@{'/scroll/' + ${scroll.id} + '/download'}"
+                          method="post"
+                          th:id="'passwordForm-' + ${scroll.id}">
+                        <div class="mb-3">
+                            <label for="scrollPassword" class="form-label">Password</label>
+                            <input type="password" class="form-control" id="scrollPassword" name="password" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const downloadForms = document.querySelectorAll('form[id^="downloadForm-"], form[id^="passwordForm-"]');
+
+        downloadForms.forEach(form => {
+            form.addEventListener('submit', function () {
+                setTimeout(function () {
+                    location.href = '/'
+                }, 500);
+            });
+        });
+    });
+</script>
 
 <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.8/dist/umd/popper.min.js"
         integrity="sha384-I7E8VVD/ismYTF4hNIPjVp/Zjvgyol6VFvRkX/vR+Vc4jQkC+hVqc2pM8ODewa9r"

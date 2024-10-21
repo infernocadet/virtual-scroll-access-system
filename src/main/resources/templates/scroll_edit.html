@@ -34,6 +34,10 @@
                         <p>Current file: <span th:text="${scroll.fileName}"></span></p>
                     </div>
                 </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" th:value="${scroll.password}">
+                </div>
                 <button type="submit" class="btn btn-primary">Edit</button>
                 <a href="/" class="btn btn-secondary">Cancel</a>
             </form>
