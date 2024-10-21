@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import system.models.User;
 import system.services.UserService;
 
+import java.util.regex.Pattern;
+
 @Controller
 public class ProfileController {
     private final UserService userService;
@@ -36,6 +38,27 @@ public class ProfileController {
                                 @RequestParam String profileEmoji,
                                 Model model){
         User currentUser = userService.getCurrentlyLoggedInUser();
+        boolean hasError = false;
+
+        if (phone != null && !phone.isEmpty() && !phone.matches("\\d{10}")) {
+            model.addAttribute("error", "Phone number must be 10 digits");
+            hasError = true;
+        }
+
+        if (profileEmoji.length() > 2) {
+            model.addAttribute("error", "Profile emoji must be a single character");
+            hasError = true;
+        }
+
+        if (email.isEmpty() || firstName.isEmpty() || lastName.isEmpty()) {
+            model.addAttribute("error", "All fields are required");
+            hasError = true;
+        }
+
+        if (hasError) {
+            model.addAttribute("user", currentUser);
+            return "profile";
+        }
 
         // update fields with new values
         currentUser.setEmail(email);
@@ -51,6 +74,7 @@ public class ProfileController {
 
         userService.save(currentUser);
         model.addAttribute("user", currentUser);
+        model.addAttribute("success", "Profile updated successfully");
         return "profile";
     }
 }
