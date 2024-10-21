@@ -145,4 +145,13 @@ public class ScrollController {
         }
         return "redirect:/";
     }
+
+    @GetMapping("/scroll/search")
+    public String searchScroll(@RequestParam("query") String query, Model model){
+        if (query.equalsIgnoreCase("")){ //if empty parameter show all
+            return "redirect:/";
+        }
+        model.addAttribute("scrolls", scrollService.findByName(query));
+        return "index";  // Or any other template where scrolls are listed
+    }
 }

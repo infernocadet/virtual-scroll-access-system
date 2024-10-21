@@ -8,6 +8,7 @@ import system.repositories.ScrollRepository;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -30,6 +31,10 @@ public class ScrollService {
         List<Scroll> scrolls = scrollRepository.findAll();
         scrolls.forEach(this::formatScrollDates);
         return scrolls;
+    }
+
+    public List<Scroll> findByName(String name){
+        return scrollRepository.findByNameContainingIgnoreCase(name);
     }
 
     public Scroll save(Scroll scroll) {
