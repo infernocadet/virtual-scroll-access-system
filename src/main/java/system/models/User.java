@@ -41,7 +41,8 @@ public class User {
     boolean admin;
 
     @JsonIgnore
-    @OneToMany(mappedBy = "user")
+    //Changed so that admins can view the number of scrolls
+    @OneToMany(mappedBy = "user", fetch = FetchType.EAGER)
     List<Scroll> scrolls;
 
     // this column stores emoji unicodes

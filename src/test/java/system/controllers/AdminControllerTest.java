@@ -8,12 +8,17 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
+import system.models.Scroll;
 import system.models.User;
+import system.repositories.ScrollRepository;
 import system.repositories.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import system.services.ScrollService;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -33,9 +38,14 @@ class AdminControllerTest {
     @MockBean
     private BCryptPasswordEncoder passwordEncoder;
 
+    @MockBean
+    private ScrollService scrollService;
+
+    @MockBean
+    private ScrollRepository scrollRepository;
+
     @BeforeEach
     void setUp() {
-        // Setup any necessary data or mocks
     }
 
     @Test
@@ -82,5 +92,264 @@ class AdminControllerTest {
     void testUnauthorizedAccess() throws Exception {
         mockMvc.perform(get("/admin/users"))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithInvalidData() throws Exception {
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "")
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithLongUsername() throws Exception {
+        String longUsername = "a".repeat(256);
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", longUsername)
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithSpecialCharactersInUsername() throws Exception {
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "user@name")
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testDeleteNonExistentUser() throws Exception {
+        doThrow(new RuntimeException("User not found")).when(userRepository).deleteById(999);
+
+        mockMvc.perform(post("/admin/users/delete/999")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository).deleteById(999);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testViewAllUsersWithNoUsers() throws Exception {
+        when(userRepository.findAll()).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/admin/users"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/view_users"))
+                .andExpect(model().attributeExists("users"))
+                .andExpect(model().attribute("users", Collections.emptyList()));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithExistingUsername() throws Exception {
+        when(userRepository.save(any(User.class))).thenThrow(new RuntimeException("Username already exists"));
+
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "existingUser")
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testViewAllScrollsWithNoScrolls() throws Exception {
+        when(scrollService.findAll()).thenReturn(Collections.emptyList());
+
+        mockMvc.perform(get("/admin/statistics"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/view_scrolls"))
+                .andExpect(model().attributeExists("scrolls"))
+                .andExpect(model().attribute("scrolls", Collections.emptyList()));
+    }
+
+    @Test
+    @WithMockUser(roles = "USER")
+    void testUnauthorizedAccessToAdminPages() throws Exception {
+        mockMvc.perform(get("/admin/users"))
+                .andExpect(status().isForbidden());
+
+        mockMvc.perform(get("/admin/statistics"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithEmptyUsername() throws Exception {
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "")
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithEmptyPassword() throws Exception {
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "newUser")
+                        .param("password", ""))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithSuccessfulSave() throws Exception {
+        when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenReturn(new User());
+
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "newUser")
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(passwordEncoder).encode("password");
+        verify(userRepository).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testDeleteUserSuccess() throws Exception {
+        doNothing().when(userRepository).deleteById(1);
+
+        mockMvc.perform(post("/admin/users/delete/1")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository).deleteById(1);
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testViewAllScrollsNoSort() throws Exception {
+        when(scrollRepository.findAll()).thenReturn(Arrays.asList(new Scroll(), new Scroll()));
+
+        mockMvc.perform(get("/admin/statistics"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/view_scrolls"))
+                .andExpect(model().attributeExists("scrolls"));
+
+        verify(scrollRepository).findAll();
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testViewAllScrollsSortAsc() throws Exception {
+        when(scrollRepository.findAllByOrderByDownloadsAsc()).thenReturn(Arrays.asList(new Scroll(), new Scroll()));
+
+        mockMvc.perform(get("/admin/statistics").param("sort", "asc"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/view_scrolls"))
+                .andExpect(model().attributeExists("scrolls"));
+
+        verify(scrollRepository).findAllByOrderByDownloadsAsc();
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testViewAllScrollsSortDesc() throws Exception {
+        when(scrollRepository.findAllByOrderByDownloadsDesc()).thenReturn(Arrays.asList(new Scroll(), new Scroll()));
+
+        mockMvc.perform(get("/admin/statistics").param("sort", "desc"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/view_scrolls"))
+                .andExpect(model().attributeExists("scrolls"));
+
+        verify(scrollRepository).findAllByOrderByDownloadsDesc();
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testIncreaseDownloads() throws Exception {
+        Scroll scroll = new Scroll();
+        scroll.setId(1);
+        scroll.setDownloads(5);
+
+        when(scrollRepository.findById(1)).thenReturn(Optional.of(scroll));
+
+        mockMvc.perform(post("/admin/scrolls/increase/1")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/statistics?sort=asc"));
+
+        verify(scrollRepository).save(argThat(s -> s.getDownloads() == 6));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testDecreaseDownloads() throws Exception {
+        Scroll scroll = new Scroll();
+        scroll.setId(1);
+        scroll.setDownloads(5);
+
+        when(scrollRepository.findById(1)).thenReturn(Optional.of(scroll));
+
+        mockMvc.perform(post("/admin/scrolls/decrease/1")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/statistics?sort=asc"));
+
+        verify(scrollRepository).save(argThat(s -> s.getDownloads() == 4));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testDecreaseDownloadsAtZero() throws Exception {
+        Scroll scroll = new Scroll();
+        scroll.setId(1);
+        scroll.setDownloads(0);
+
+        when(scrollRepository.findById(1)).thenReturn(Optional.of(scroll));
+
+        mockMvc.perform(post("/admin/scrolls/decrease/1")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/statistics?sort=asc"));
+
+        verify(scrollRepository).save(argThat(s -> s.getDownloads() == 0));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testSearchUsers() throws Exception {
+        mockMvc.perform(get("/admin/users/search")
+                        .param("username", "test"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/view_users"))
+                .andExpect(model().attributeExists("users", "newUser", "userScrollCounts"));
     }
 }

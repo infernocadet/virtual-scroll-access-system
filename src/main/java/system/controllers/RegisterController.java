@@ -31,6 +31,21 @@ public class RegisterController {
             return "register";
         }
 
+        if (user.getUsername().length() > 255) {
+            model.addAttribute("error", "Username must be less than 255 characters");
+            return "register";
+        }
+
+        if (!user.getUsername().matches("^[a-zA-Z0-9 ]+$")) {
+            model.addAttribute("error", "Username can only contain letters, numbers, and spaces");
+            return "register";
+        }
+
+        if (user.getPassword().length() < 8) {
+            model.addAttribute("error", "Password must be at least 8 characters long");
+            return "register";
+        }
+
         if (user.getEmail() != null && !user.getEmail().isEmpty()) {
             Pattern emailPattern = Pattern.compile("^[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,6}$", Pattern.CASE_INSENSITIVE);
             if (!emailPattern.matcher(user.getEmail()).matches()) {

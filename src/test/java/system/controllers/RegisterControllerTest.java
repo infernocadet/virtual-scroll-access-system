@@ -8,10 +8,12 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
+import system.models.User;
 import system.services.UserService;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -45,7 +47,7 @@ class RegisterControllerTest {
                         .param("firstName", "New")
                         .param("lastName", "User")
                         .param("phone", "1234567890")
-                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                        .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login"));
 
@@ -64,7 +66,7 @@ class RegisterControllerTest {
                         .param("firstName", "Existing")
                         .param("lastName", "User")
                         .param("phone", "1234567890")
-                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("register"))
                 .andExpect(model().attribute("error", "Username already exists"));
@@ -79,7 +81,7 @@ class RegisterControllerTest {
                         .param("username", "")
                         .param("password", "password")
                         .param("email", "test@example.com")
-                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("register"))
                 .andExpect(model().attribute("error", "Username or Password is empty"));
@@ -94,7 +96,7 @@ class RegisterControllerTest {
                         .param("username", "newUser")
                         .param("password", "password")
                         .param("email", "invalid-email")
-                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("register"))
                 .andExpect(model().attribute("error", "Invalid email"));
@@ -109,12 +111,76 @@ class RegisterControllerTest {
                         .param("username", "newUser")
                         .param("password", "password")
                         .param("email", "valid@example.com")
-                        .param("phone", "123456")
-                        .with(SecurityMockMvcRequestPostProcessors.csrf()))
+                        .param("phone", "123")  // Invalid phone number
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("register"))
                 .andExpect(model().attribute("error", "Phone number must be 10 digits"));
 
         verify(userService, never()).save(any());
+    }
+
+    @Test
+    void testPostRegister_UsernameWithSpecialCharacters() throws Exception {
+        mockMvc.perform(post("/register")
+                        .param("username", "user@name")
+                        .param("password", "password")
+                        .param("email", "user@example.com")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("register"))
+                .andExpect(model().attributeExists("error"))
+                .andExpect(model().attribute("error", "Username can only contain letters, numbers, and spaces"));
+
+        verify(userService, never()).save(any(User.class));
+    }
+
+    @Test
+    void testPostRegister_UsernameTooLong() throws Exception {
+        String longUsername = "a".repeat(256);
+        mockMvc.perform(post("/register")
+                        .param("username", longUsername)
+                        .param("password", "password")
+                        .param("email", "user@example.com")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("register"))
+                .andExpect(model().attributeExists("error"))
+                .andExpect(model().attribute("error", "Username must be less than 255 characters"));
+
+        verify(userService, never()).save(any(User.class));
+    }
+
+    @Test
+    void testPostRegister_PasswordTooShort() throws Exception {
+        mockMvc.perform(post("/register")
+                        .param("username", "newUser")
+                        .param("password", "short")
+                        .param("email", "newuser@example.com")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("register"))
+                .andExpect(model().attributeExists("error"))
+                .andExpect(model().attribute("error", "Password must be at least 8 characters long"));
+
+        verify(userService, never()).save(any(User.class));
+    }
+
+    @Test
+    void testPostRegister_EmptyOptionalFields() throws Exception {
+        when(userService.userExists(anyString())).thenReturn(false);
+
+        mockMvc.perform(post("/register")
+                        .param("username", "newUser")
+                        .param("password", "password")
+                        .param("email", "newuser@example.com")
+                        .param("firstName", "")
+                        .param("lastName", "")
+                        .param("phone", "")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login"));
+
+        verify(userService).save(any(User.class));
     }
 }

@@ -7,6 +7,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors;
 import org.springframework.test.web.servlet.MockMvc;
 import system.models.User;
 import system.services.UserService;
@@ -98,6 +99,26 @@ class ProfileControllerTest {
 
     @Test
     @WithMockUser(username = "testuser")
+    void testUpdateProfileWithoutPassword() throws Exception {
+        when(userService.getCurrentlyLoggedInUser()).thenReturn(testUser);
+
+        mockMvc.perform(post("/profile/update")
+                        .with(SecurityMockMvcRequestPostProcessors.csrf())
+                        .param("email", "newemail@example.com")
+                        .param("firstName", "NewFirst")
+                        .param("lastName", "NewLast")
+                        .param("phone", "9876543210")
+                        .param("profileEmoji", "🎉"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("profile"))
+                .andExpect(model().attributeExists("user"));
+
+        verify(userService).save(any(User.class));
+        verify(passwordEncoder, never()).encode(anyString());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
     void testUpdateProfileEmoji() throws Exception {
         when(userService.getCurrentlyLoggedInUser()).thenReturn(testUser);
 
@@ -113,5 +134,71 @@ class ProfileControllerTest {
                 .andExpect(model().attributeExists("user"));
 
         verify(userService).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testUpdateProfileWithInvalidPhone() throws Exception {
+        User testUser = new User();
+        testUser.setUsername("testuser");
+        when(userService.getCurrentlyLoggedInUser()).thenReturn(testUser);
+
+        mockMvc.perform(post("/profile/update")
+                        .with(csrf())
+                        .param("email", "test@example.com")
+                        .param("firstName", "Test")
+                        .param("lastName", "User")
+                        .param("phone", "123")
+                        .param("profileEmoji", "😊"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("profile"))
+                .andExpect(model().attributeExists("error"))
+                .andExpect(model().attribute("error", "Phone number must be 10 digits"));
+
+        verify(userService, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testUpdateProfileWithLongProfileEmoji() throws Exception {
+        User testUser = new User();
+        testUser.setUsername("testuser");
+        when(userService.getCurrentlyLoggedInUser()).thenReturn(testUser);
+
+        mockMvc.perform(post("/profile/update")
+                        .with(csrf())
+                        .param("email", "test@example.com")
+                        .param("firstName", "Test")
+                        .param("lastName", "User")
+                        .param("phone", "1234567890")
+                        .param("profileEmoji", "😊😊😊😊😊😊"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("profile"))
+                .andExpect(model().attributeExists("error"))
+                .andExpect(model().attribute("error", "Profile emoji must be a single character"));
+
+        verify(userService, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testUpdateProfileWithEmptyFields() throws Exception {
+        User testUser = new User();
+        testUser.setUsername("testuser");
+        when(userService.getCurrentlyLoggedInUser()).thenReturn(testUser);
+
+        mockMvc.perform(post("/profile/update")
+                        .with(csrf())
+                        .param("email", "")
+                        .param("firstName", "")
+                        .param("lastName", "")
+                        .param("phone", "")
+                        .param("profileEmoji", ""))
+                .andExpect(status().isOk())
+                .andExpect(view().name("profile"))
+                .andExpect(model().attributeExists("error"))
+                .andExpect(model().attribute("error", "All fields are required"));
+
+        verify(userService, never()).save(any(User.class));
     }
 }
