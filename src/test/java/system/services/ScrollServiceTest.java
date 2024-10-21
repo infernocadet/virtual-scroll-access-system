@@ -47,6 +47,104 @@ class ScrollServiceTest {
     }
 
     @Test
+    void testFindByName() {
+        List<Scroll> scrolls = Arrays.asList(testScroll);
+        when(scrollRepository.findByNameContainingIgnoreCase("Test")).thenReturn(scrolls);
+
+        List<Scroll> result = scrollService.findByName("Test");
+
+        assertEquals(1, result.size());
+        assertEquals("Test Scroll", result.get(0).getName());
+    }
+
+    @Test
+    void testFindByUserID() {
+        List<Scroll> scrolls = Arrays.asList(testScroll);
+        when(scrollRepository.findByUserId(1)).thenReturn(scrolls);
+
+        List<Scroll> result = scrollService.findByUserID(1);
+
+        assertEquals(1, result.size());
+        assertEquals("Test Scroll", result.get(0).getName());
+    }
+
+    @Test
+    void testFindByCreatedAtAfter() {
+        LocalDateTime date = LocalDateTime.now().minusDays(1);
+        List<Scroll> scrolls = Arrays.asList(testScroll);
+        when(scrollRepository.findByCreatedAtAfter(date)).thenReturn(scrolls);
+
+        List<Scroll> result = scrollService.findByCreatedAtAfter(date);
+
+        assertEquals(1, result.size());
+        assertEquals("Test Scroll", result.get(0).getName());
+    }
+
+    @Test
+    void testFindByCreatedAtBetween() {
+        LocalDateTime startDate = LocalDateTime.now().minusDays(2);
+        LocalDateTime endDate = LocalDateTime.now();
+        List<Scroll> scrolls = Arrays.asList(testScroll);
+        when(scrollRepository.findByCreatedAtBetween(startDate, endDate)).thenReturn(scrolls);
+
+        List<Scroll> result = scrollService.findByCreatedAtBetween(startDate, endDate);
+
+        assertEquals(1, result.size());
+        assertEquals("Test Scroll", result.get(0).getName());
+    }
+
+    @Test
+    void testSearchScrollsWithUserId() {
+        List<Scroll> userScrolls = Arrays.asList(testScroll);
+        when(scrollRepository.findByUserId(1)).thenReturn(userScrolls);
+
+        List<Scroll> result = scrollService.searchScrolls(1, null, null, null, null);
+
+        assertEquals(1, result.size());
+        assertEquals("Test Scroll", result.get(0).getName());
+    }
+
+    @Test
+    void testSearchScrollsWithName() {
+        List<Scroll> scrolls = Arrays.asList(testScroll);
+        when(scrollRepository.findByNameContainingIgnoreCase("Test")).thenReturn(scrolls);
+
+        List<Scroll> result = scrollService.searchScrolls(null, null, "Test", null, null);
+
+        assertEquals(1, result.size());
+        assertEquals("Test Scroll", result.get(0).getName());
+    }
+
+    @Test
+    void testSearchScrollsWithNonExistentScrollId() {
+        when(scrollRepository.findById(999)).thenReturn(Optional.empty());
+
+        List<Scroll> result = scrollService.searchScrolls(null, 999, null, null, null);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void testSearchScrollsWithDateRange() {
+        LocalDateTime startDate = LocalDateTime.now().minusDays(2);
+        LocalDateTime endDate = LocalDateTime.now();
+        List<Scroll> scrolls = Arrays.asList(testScroll);
+        when(scrollRepository.findByCreatedAtBetween(startDate, endDate)).thenReturn(scrolls);
+
+        List<Scroll> result = scrollService.searchScrolls(null, null, null, startDate, endDate);
+
+        assertEquals(1, result.size());
+        assertEquals("Test Scroll", result.get(0).getName());
+    }
+
+    @Test
+    void testSearchScrollsWithNoParams() {
+        List<Scroll> result = scrollService.searchScrolls(null, null, null, null, null);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
     void testFindById() {
         when(scrollRepository.findById(1)).thenReturn(Optional.of(testScroll));
         when(scrollRepository.findById(2)).thenReturn(Optional.empty());
