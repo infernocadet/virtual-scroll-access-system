@@ -20,6 +20,9 @@
 <div th:replace="~{fragments/navbar :: navbar}"></div>
 
 <div class="container-sm mt-4">
+    <div th:if="${error != null}" class="alert alert-danger" role="alert">
+        <span th:text="${error}"></span>
+    </div>
     <div class="card">
         <div class="card-header">
             My Profile
