@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import system.models.Scroll;
 import system.repositories.ScrollRepository;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -35,6 +36,37 @@ public class ScrollService {
 
     public List<Scroll> findByName(String name){
         return scrollRepository.findByNameContainingIgnoreCase(name);
+    }
+
+    public List<Scroll> findByUserID(int userId){
+        return scrollRepository.findByUserId(userId);
+    }
+
+    public List<Scroll> findByCreatedAtAfter(LocalDateTime date){
+        return scrollRepository.findByCreatedAtAfter(date);
+    }
+
+    public List<Scroll> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate){
+        return scrollRepository.findByCreatedAtBetween(startDate, endDate);
+    }
+
+    public List<Scroll> searchScrolls(Integer userId, Integer scrollId, String name, LocalDateTime startDate, LocalDateTime endDate) {
+
+        if (scrollId != null){
+            return scrollRepository.findById(scrollId).stream().toList();
+        }
+
+        List<Scroll> result = new ArrayList<>();
+
+        if (userId != null) {
+            result = scrollRepository.findByUserId(userId);
+        } else if (name != null && !name.isEmpty()) {
+            result = scrollRepository.findByNameContainingIgnoreCase(name);
+        } else if (startDate != null && endDate != null) {
+            result = scrollRepository.findByCreatedAtBetween(startDate, endDate);
+        }
+
+        return result;
     }
 
     public Scroll save(Scroll scroll) {
