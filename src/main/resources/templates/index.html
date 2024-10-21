@@ -16,7 +16,29 @@
     <div th:if="${error != null}" class="alert alert-danger" role="alert">
         <span th:text="${error}"></span>
     </div>
-
+    <form action="/scroll/search" method="get">
+        <div class="mb-3">
+            <label for="uploaderId" class="form-label">Uploader ID</label>
+            <input type="number" class="form-control" id="uploaderId" name="uploaderId">
+        </div>
+        <div class="mb-3">
+            <label for="scrollId" class="form-label">Scroll ID</label>
+            <input type="number" class="form-control" id="scrollId" name="scrollId">
+        </div>
+        <div class="mb-3">
+            <label for="name" class="form-label">Scroll Name</label>
+            <input type="text" class="form-control" id="name" name="name">
+        </div>
+        <div class="mb-3">
+            <label for="startDate" class="form-label">Start Date</label>
+            <input type="datetime-local" class="form-control" id="startDate" name="startDate">
+        </div>
+        <div class="mb-3">
+            <label for="endDate" class="form-label">End Date</label>
+            <input type="datetime-local" class="form-control" id="endDate" name="endDate">
+        </div>
+        <button type="submit" class="btn btn-primary">Search</button>
+    </form>
     <div class="card">
         <div class="card-header" id="message-header">
             <div class="d-flex justify-content-between align-items-center">

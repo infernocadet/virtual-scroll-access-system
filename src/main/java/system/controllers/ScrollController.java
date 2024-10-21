@@ -14,6 +14,9 @@ import system.services.UserService;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Optional;
 
 @Controller
@@ -22,6 +25,8 @@ public class ScrollController {
 
     private final UserService userService;
     private final ScrollService scrollService;
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm");
+
 
     @GetMapping("/")
     public String getIndex(Model model) {
@@ -144,5 +149,25 @@ public class ScrollController {
             scrollService.delete(scroll);
         }
         return "redirect:/";
+    }
+
+    @GetMapping("/scroll/search")
+    public String searchScroll(@RequestParam(value = "uploaderId", required = false) Integer uploaderId,
+                               @RequestParam(value = "scrollId", required = false) Integer scrollId,
+                               @RequestParam(value = "name", required = false) String name,
+                               @RequestParam(value = "startDate", required = false) String startDate,
+                               @RequestParam(value = "endDate", required = false) String endDate,
+                               Model model) {
+
+        LocalDateTime start = startDate != null && !startDate.isEmpty() ? LocalDateTime.parse(startDate, formatter) : null;
+        LocalDateTime end = endDate != null && !endDate.isEmpty() ? LocalDateTime.parse(endDate, formatter) : null;
+
+        List<Scroll> scrolls = scrollService.searchScrolls(uploaderId, scrollId, name, start, end);
+        if (scrolls.isEmpty()){
+            return "redirect:/";
+        }
+        model.addAttribute("scrolls", scrolls);
+
+        return "index";  // Or wherever the scroll list is displayed
     }
 }
