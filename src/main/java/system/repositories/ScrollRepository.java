@@ -20,5 +20,7 @@ public interface ScrollRepository extends JpaRepository<Scroll, Integer> {
     Optional<Scroll> findById(int scrollId); // will only give one scroll
     List<Scroll> findByCreatedAtAfter(LocalDateTime date);
     List<Scroll> findByCreatedAtBetween(LocalDateTime startDate, LocalDateTime endDate);
+    List<Scroll> findAllByOrderByDownloadsAsc(); // For ascending order
+    List<Scroll> findAllByOrderByDownloadsDesc();
 
 }
