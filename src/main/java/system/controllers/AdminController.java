@@ -5,6 +5,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import system.models.Scroll;
 import system.models.User;
+import system.repositories.ScrollRepository;
 import system.repositories.UserRepository;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import system.services.ScrollService;
@@ -20,11 +21,13 @@ public class AdminController {
     private final UserRepository userRepository;
     private final BCryptPasswordEncoder passwordEncoder;
     private final ScrollService scrollService;
+    private ScrollRepository scrollRepository;
 
-    public AdminController(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, ScrollService scrollService) {
+    public AdminController(UserRepository userRepository, BCryptPasswordEncoder passwordEncoder, ScrollService scrollService, ScrollRepository scrollRepository ) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.scrollService = scrollService;
+        this.scrollRepository=  scrollRepository;
     }
 
     @GetMapping("/admin/users")
@@ -42,10 +45,37 @@ public class AdminController {
     }
 
     @GetMapping("/admin/statistics")
-    public String viewAllScrolls(Model model) {
-        List<Scroll> scrolls = scrollService.findAll();
+    public String viewAllScrolls(Model model, @RequestParam(value = "sort", required = false) String sort) {
+        List<Scroll> scrolls;
+
+        if ("asc".equals(sort)) {
+            scrolls = scrollRepository.findAllByOrderByDownloadsAsc();
+        } else if ("desc".equals(sort)) {
+            scrolls = scrollRepository.findAllByOrderByDownloadsDesc();
+        } else {
+            scrolls = scrollRepository.findAll(); // Default to no sorting
+        }
+
         model.addAttribute("scrolls", scrolls);
         return "admin/view_scrolls";
+    }
+
+    @PostMapping("/admin/scrolls/increase/{id}")
+    public String increaseDownloads(@PathVariable int id) {
+        Scroll scroll = scrollRepository.findById(id).orElseThrow();
+        scroll.setDownloads(scroll.getDownloads() + 1);
+        scrollRepository.save(scroll);
+        return "redirect:/admin/statistics?sort=asc";
+    }
+
+    @PostMapping("/admin/scrolls/decrease/{id}")
+    public String decreaseDownloads(@PathVariable int id) {
+        Scroll scroll = scrollRepository.findById(id).orElseThrow();
+        if (scroll.getDownloads() > 0) {
+            scroll.setDownloads(scroll.getDownloads() - 1);
+        }
+        scrollRepository.save(scroll);
+        return "redirect:/admin/statistics?sort=asc";
     }
 
 
@@ -53,7 +83,7 @@ public class AdminController {
     public String addUser(@ModelAttribute("newUser") User user) {
         if (user.getUsername() == null || user.getUsername().isEmpty() ||
                 user.getPassword() == null || user.getPassword().isEmpty() ||
-                user.getUsername().length() > 255 || !user.getUsername().matches("^[a-zA-Z0-9]+$")) {
+                user.getUsername().length() > 255 || !user.getUsername().matches("^[a-zA-Z0-9 ]+$")) {
             return "redirect:/admin/users";
         }
 
@@ -75,5 +105,22 @@ public class AdminController {
         }
         return "redirect:/admin/users";
     }
+    @GetMapping("/admin/users/search")
+    public String searchUsers(@RequestParam("username") String username, Model model) {
+        List<User> users = userRepository.findByUsernameContainingIgnoreCase(username);
+        Map<User, Integer> userScrollCounts = new HashMap<>();
+        for (User user : users) {
+            int scrollCount = (user.getScrolls() != null) ? user.getScrolls().size() : 0;
+            userScrollCounts.put(user, scrollCount);
+        }
+        model.addAttribute("users", users);
+        model.addAttribute("newUser", new User());
+        model.addAttribute("userScrollCounts", userScrollCounts);
+        return "admin/view_users";
+    }
+
+
+
 }
+
 
