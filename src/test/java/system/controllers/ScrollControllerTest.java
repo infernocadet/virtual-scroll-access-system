@@ -183,17 +183,22 @@ class ScrollControllerTest {
     @Test
     @WithMockUser(username = "testuser")
     void testGetDownloadScroll() throws Exception {
-        when(scrollService.findById(1)).thenReturn(Optional.of(testScroll));
-        testScroll.setContent("test content".getBytes());
-        testScroll.setContentType(MediaType.TEXT_PLAIN_VALUE);
-        testScroll.setFileName("test.txt");
+        Scroll scroll = new Scroll();
+        scroll.setId(1);
+        scroll.setContent("test content".getBytes());
+        scroll.setContentType(MediaType.TEXT_PLAIN_VALUE);
+        scroll.setFileName("test.txt");
+        scroll.setUser(testUser);
 
-        mockMvc.perform(get("/scroll/1/download"))
+        when(scrollService.findById(1)).thenReturn(Optional.of(scroll));
+        when(scrollService.save(any(Scroll.class))).thenReturn(scroll);
+
+        mockMvc.perform(post("/scroll/1/download")
+                        .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN_VALUE))
-                .andExpect(header().string("Content-Disposition", "attachment; filename=\"test.txt\""));
-
-        verify(scrollService).save(testScroll);
+                .andExpect(header().string("Content-Disposition", "attachment; filename=\"test.txt\""))
+                .andExpect(content().bytes("test content".getBytes()));
     }
 
     @Test
@@ -211,19 +216,37 @@ class ScrollControllerTest {
     @Test
     @WithMockUser(username = "testuser")
     void testPostEditScrollSuccess() throws Exception {
-        when(scrollService.findById(1)).thenReturn(Optional.of(testScroll));
+        Scroll existingScroll = new Scroll();
+        existingScroll.setId(1);
+        existingScroll.setName("Old Name");
+        existingScroll.setUser(testUser);
+        existingScroll.setContent("old content".getBytes());
+        existingScroll.setContentType(MediaType.TEXT_PLAIN_VALUE);
+        existingScroll.setFileName("old.txt");
+        existingScroll.setPassword("oldPassword");
+
         when(userService.findByUsername("testuser")).thenReturn(testUser);
+        when(scrollService.findById(1)).thenReturn(Optional.of(existingScroll));
         when(scrollService.nameExists("Updated Scroll")).thenReturn(false);
+        when(scrollService.save(any(Scroll.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        MockMultipartFile file = new MockMultipartFile("contentFile", "updated.txt", MediaType.TEXT_PLAIN_VALUE, "updated content".getBytes());
+        MockMultipartFile file = new MockMultipartFile(
+                "contentFile",
+                "test.txt",
+                MediaType.TEXT_PLAIN_VALUE,
+                "content".getBytes()
+        );
 
+        // Perform the request
         mockMvc.perform(multipart("/scroll/1/edit")
                         .file(file)
                         .param("name", "Updated Scroll")
+                        .param("password", "oldPassword")
                         .with(csrf()))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/"));
 
+        // Verify the service call
         verify(scrollService).save(any(Scroll.class));
     }
 
@@ -339,25 +362,122 @@ class ScrollControllerTest {
     void testGetDownloadScrollNonExistent() throws Exception {
         when(scrollService.findById(999)).thenReturn(Optional.empty());
 
-        mockMvc.perform(get("/scroll/999/download"))
+        mockMvc.perform(post("/scroll/999/download")
+                        .with(csrf()))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testGetDownloadScrollIncrementsDownloadCount() throws Exception {
+        Scroll scroll = new Scroll();
+        scroll.setId(1);
+        scroll.setContent("test content".getBytes());
+        scroll.setContentType(MediaType.TEXT_PLAIN_VALUE);
+        scroll.setFileName("test.txt");
+        scroll.setUser(testUser);
+        scroll.setDownloads(5);
+
+        when(scrollService.findById(1)).thenReturn(Optional.of(scroll));
+        when(scrollService.save(any(Scroll.class))).thenAnswer(invocation -> {
+            Scroll savedScroll = invocation.getArgument(0);
+            assertEquals(6, savedScroll.getDownloads());
+            return savedScroll;
+        });
+
+        mockMvc.perform(post("/scroll/1/download")
+                        .with(csrf()))
+                .andExpect(status().isOk());
+
+        verify(scrollService).save(argThat(s -> s.getDownloads() == 6));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testDownloadScrollWithCorrectPassword() throws Exception {
+        Scroll scroll = new Scroll();
+        scroll.setId(1);
+        scroll.setContent("test content".getBytes());
+        scroll.setContentType(MediaType.TEXT_PLAIN_VALUE);
+        scroll.setFileName("test.txt");
+        scroll.setUser(testUser);
+        scroll.setPassword("correctPassword");
+
+        when(scrollService.findById(1)).thenReturn(Optional.of(scroll));
+
+        mockMvc.perform(post("/scroll/1/download")
+                        .param("password", "correctPassword")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.TEXT_PLAIN_VALUE));
+
+        verify(scrollService).save(any(Scroll.class));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testDownloadScrollWithWrongPassword() throws Exception {
+        Scroll scroll = new Scroll();
+        scroll.setId(1);
+        scroll.setPassword("correctPassword");
+        scroll.setUser(testUser);
+
+        when(scrollService.findById(1)).thenReturn(Optional.of(scroll));
+        when(scrollService.findAll()).thenReturn(Arrays.asList(scroll));
+
+        mockMvc.perform(post("/scroll/1/download")
+                        .param("password", "wrongPassword")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("index"))
+                .andExpect(model().attribute("error", "Wrong password"));
 
         verify(scrollService, never()).save(any(Scroll.class));
     }
 
     @Test
     @WithMockUser(username = "testuser")
-    void testGetDownloadScrollIncrementsDownloadCount() throws Exception {
-        when(scrollService.findById(1)).thenReturn(Optional.of(testScroll));
-        testScroll.setContent("test content".getBytes());
-        testScroll.setContentType(MediaType.TEXT_PLAIN_VALUE);
-        testScroll.setFileName("test.txt");
-        testScroll.setDownloads(0);
+    void testPostEditScrollWithPasswordChange() throws Exception {
+        Scroll existingScroll = new Scroll();
+        existingScroll.setId(1);
+        existingScroll.setName("Old Name");
+        existingScroll.setUser(testUser);
+        existingScroll.setPassword("oldPassword");
 
-        mockMvc.perform(get("/scroll/1/download"))
-                .andExpect(status().isOk());
+        when(scrollService.findById(1)).thenReturn(Optional.of(existingScroll));
+        when(userService.findByUsername("testuser")).thenReturn(testUser);
 
-        assertEquals(1, testScroll.getDownloads());
-        verify(scrollService).save(testScroll);
+        mockMvc.perform(multipart("/scroll/1/edit")
+                        .file(new MockMultipartFile("contentFile", new byte[0]))
+                        .param("name", "Old Name")
+                        .param("password", "newPassword")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
+
+        verify(scrollService).save(argThat(s -> s.getPassword().equals("newPassword")));
+    }
+
+    @Test
+    @WithMockUser(username = "testuser")
+    void testPostEditScrollDuplicateName() throws Exception {
+        Scroll existingScroll = new Scroll();
+        existingScroll.setId(1);
+        existingScroll.setUser(testUser);
+        existingScroll.setName("Old Name");
+
+        when(scrollService.findById(1)).thenReturn(Optional.of(existingScroll));
+        when(userService.findByUsername("testuser")).thenReturn(testUser);
+        when(scrollService.nameExists("New Name")).thenReturn(true);
+
+        mockMvc.perform(multipart("/scroll/1/edit")
+                        .file(new MockMultipartFile("contentFile", new byte[0]))
+                        .param("name", "New Name")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("scroll_edit"))
+                .andExpect(model().attributeExists("error"));
+
+        verify(scrollService, never()).save(any());
     }
 }

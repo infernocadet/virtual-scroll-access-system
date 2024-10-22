@@ -20,6 +20,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
+import static org.hamcrest.Matchers.hasEntry;
 import static org.mockito.Mockito.*;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -158,6 +159,139 @@ class AdminControllerTest {
                 .andExpect(view().name("admin/view_users"))
                 .andExpect(model().attributeExists("users"))
                 .andExpect(model().attribute("users", Collections.emptyList()));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testViewAllUsersWithScrolls() throws Exception {
+        User user1 = new User();
+        user1.setId(1);
+        user1.setUsername("user1");
+        List<Scroll> scrolls = Arrays.asList(new Scroll(), new Scroll());
+        user1.setScrolls(scrolls);
+
+        User user2 = new User();
+        user2.setId(2);
+        user2.setUsername("user2");
+        user2.setScrolls(null);
+
+        List<User> users = Arrays.asList(user1, user2);
+        when(userRepository.findAll()).thenReturn(users);
+
+        mockMvc.perform(get("/admin/users"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("admin/view_users"))
+                .andExpect(model().attributeExists("users", "userScrollCounts"))
+                .andExpect(model().attribute("userScrollCounts", hasEntry(user1, 2)))
+                .andExpect(model().attribute("userScrollCounts", hasEntry(user2, 0)));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithNullUsername() throws Exception {
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("password", "password"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testAddUserWithNullPassword() throws Exception {
+        mockMvc.perform(post("/admin/users/add")
+                        .with(csrf())
+                        .param("username", "testuser"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testMakeAdmin() throws Exception {
+        User user = new User();
+        user.setId(1);
+        user.setAdmin(false);
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        mockMvc.perform(post("/admin/users/makeAdmin/1")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository).save(argThat(savedUser -> savedUser.isAdmin()));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testMakeAdminInvalidId() throws Exception {
+        when(userRepository.findById(999)).thenReturn(Optional.empty());
+
+        mockMvc.perform(post("/admin/users/makeAdmin/999")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testDemoteAdmin() throws Exception {
+        User user = new User();
+        user.setId(1);
+        user.setAdmin(true);
+
+        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        mockMvc.perform(post("/admin/users/demoteAdmin/1")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository).save(argThat(savedUser -> !savedUser.isAdmin()));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testDemoteAdminInvalidId() throws Exception {
+        when(userRepository.findById(999)).thenReturn(Optional.empty());
+
+        mockMvc.perform(post("/admin/users/demoteAdmin/999")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testMakeAdminWithException() throws Exception {
+        when(userRepository.findById(1)).thenThrow(new RuntimeException("Database error"));
+
+        mockMvc.perform(post("/admin/users/makeAdmin/1")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void testDemoteAdminWithException() throws Exception {
+        when(userRepository.findById(1)).thenThrow(new RuntimeException("Database error"));
+
+        mockMvc.perform(post("/admin/users/demoteAdmin/1")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/admin/users"));
     }
 
     @Test

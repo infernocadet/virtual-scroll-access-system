@@ -111,7 +111,7 @@ class RegisterControllerTest {
                         .param("username", "newUser")
                         .param("password", "password")
                         .param("email", "valid@example.com")
-                        .param("phone", "123")  // Invalid phone number
+                        .param("phone", "123")
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(view().name("register"))
@@ -182,5 +182,119 @@ class RegisterControllerTest {
                 .andExpect(redirectedUrl("/login"));
 
         verify(userService).save(any(User.class));
+    }
+
+    @Test
+    void testPostRegister_NullUsername() throws Exception {
+        mockMvc.perform(post("/register")
+                        .param("password", "password")
+                        .param("email", "test@example.com")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("register"))
+                .andExpect(model().attribute("error", "Username or Password is empty"));
+
+        verify(userService, never()).save(any());
+    }
+
+    @Test
+    void testPostRegister_NullPassword() throws Exception {
+        mockMvc.perform(post("/register")
+                        .param("username", "testuser")
+                        .param("email", "test@example.com")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("register"))
+                .andExpect(model().attribute("error", "Username or Password is empty"));
+
+        verify(userService, never()).save(any());
+    }
+
+    @Test
+    void testPostRegister_NullEmail() throws Exception {
+        when(userService.userExists(anyString())).thenReturn(false);
+
+        mockMvc.perform(post("/register")
+                        .param("username", "testuser")
+                        .param("password", "password123")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login"));
+
+        verify(userService).save(any());
+    }
+
+    @Test
+    void testPostRegister_NonAlphanumericUsername() throws Exception {
+        mockMvc.perform(post("/register")
+                        .param("username", "test!user")
+                        .param("password", "password123")
+                        .param("email", "test@example.com")
+                        .with(csrf()))
+                .andExpect(status().isOk())
+                .andExpect(view().name("register"))
+                .andExpect(model().attribute("error", "Username can only contain letters, numbers, and spaces"));
+
+        verify(userService, never()).save(any());
+    }
+
+    @Test
+    void testPostRegister_EmptyOptionalFieldsWithNullValues() throws Exception {
+        when(userService.userExists(anyString())).thenReturn(false);
+
+        mockMvc.perform(post("/register")
+                        .param("username", "testuser")
+                        .param("password", "password123")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login"));
+
+        verify(userService).save(any());
+    }
+
+    @Test
+    void testPostRegister_ValidEmailWithUpperCase() throws Exception {
+        when(userService.userExists(anyString())).thenReturn(false);
+
+        mockMvc.perform(post("/register")
+                        .param("username", "testuser")
+                        .param("password", "password123")
+                        .param("email", "TEST@EXAMPLE.COM")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login"));
+
+        verify(userService).save(any());
+    }
+
+    @Test
+    void testPostRegister_EmptyPhone() throws Exception {
+        when(userService.userExists(anyString())).thenReturn(false);
+
+        mockMvc.perform(post("/register")
+                        .param("username", "testuser")
+                        .param("password", "password123")
+                        .param("email", "test@example.com")
+                        .param("phone", "")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login"));
+
+        verify(userService).save(any());
+    }
+
+    @Test
+    void testPostRegister_UsernameWithSpaces() throws Exception {
+        when(userService.userExists(anyString())).thenReturn(false);
+
+        mockMvc.perform(post("/register")
+                        .param("username", "test user")
+                        .param("password", "password123")
+                        .param("email", "test@example.com")
+                        .with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login"));
+
+        verify(userService).save(any());
     }
 }
